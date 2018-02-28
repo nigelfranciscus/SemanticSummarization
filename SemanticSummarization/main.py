@@ -1,6 +1,7 @@
 import pymongo
 import codecs
 import re
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
@@ -27,6 +28,9 @@ if __name__ == '__main__':
             result = data["text"].replace("\n", " ")
             result = re.sub(r"https\S+", "", result)
             result = result.lower()
-            # print(result)
-            print([i for i in result.split() if i not in stop])
+            print(result)
+            # print([i for i in result.split() if i not in stop])
             # f.write(result + "\n")
+            tokens = nltk.word_tokenize(result)
+            tagged = nltk.pos_tag(tokens)
+            #print(tagged)
