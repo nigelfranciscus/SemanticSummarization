@@ -4,6 +4,7 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import TweetTokenizer
+from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem.porter import PorterStemmer
 from nltk import ngrams
 
@@ -36,11 +37,13 @@ for data in database['goldcoast_location'].find({}, {'text': 1, '_id': 0, 'lang'
         resultsplit = result.split()
 
         stemmer = PorterStemmer()
-        tokens = nltk.word_tokenize(result)
+        tokens = word_tokenize(result)
         tknzr = TweetTokenizer()
         tweettoken = tknzr.tokenize(result)
+        tweetstemmer = stemmer.stem(tokens)
+        print(tweetstemmer)
         # tagged = nltk.pos_tag(tokens)
         # print(tagged)
         threegrams = ngrams(tweettoken, 3)
-        for grams in threegrams:
-            print(grams)
+        #for grams in threegrams:
+            #print(grams)
