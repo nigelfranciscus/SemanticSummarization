@@ -52,6 +52,7 @@ Image(url="http://cntk.ai/jup/s2s.png", width=700)
 # Figure 3
 Image(url="https://cntk.ai/jup/cntk204_s2s2.png", width=700)
 
+
 # The `Attention` layer above takes the current value of the hidden state in the Decoder, all of the hidden states in the Encoder, and calculates an augmented version of the hidden state to use. More specifically, the contribution from the Encoder's hidden states will represent a weighted sum of all of its hidden states where the highest weight corresponds both to the biggest contribution to the augmented hidden state and to the hidden state that will be most important for the Decoder to consider when generating the next word.
 
 # ## Problem: Grapheme-to-Phoneme Conversion
@@ -579,7 +580,7 @@ def debug_attention(model, input):
 
 
 model = create_model()
-#train(train_reader, valid_reader, vocab, i2w, model, max_epochs=1, epoch_size=25000)
+# train(train_reader, valid_reader, vocab, i2w, model, max_epochs=1, epoch_size=25000)
 
 # As we can see above, while the loss has come down quite a ways, the output sequence is still quite a ways off from what we expect. Uncomment the code below to run for a full epoch (notice that we switch the `epoch_size` parameter to the actual size of the training data) and by the end of the first epoch you will already see a very good grapheme-to-phoneme translation model running!
 
@@ -588,7 +589,6 @@ model = create_model()
 
 # Uncomment the line below to train the model for a full epoch
 train(train_reader, valid_reader, vocab, i2w, model, max_epochs=1, epoch_size=908241)
-
 
 # ## Testing the network
 # 
