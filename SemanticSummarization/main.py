@@ -1,3 +1,6 @@
+import json
+import random
+
 import pymongo
 import codecs
 import re
@@ -14,18 +17,18 @@ from nltk.corpus import brown
 from sklearn.cluster import KMeans
 
 from SemanticSummarization.twokenize import simpleTokenize
+from SemanticSummarization.k_means import kMeans
 
-stop = set(stopwords.words('english'))
+stops = set(stopwords.words("english"))
+stemmer = PorterStemmer()
+# tknzr = TweetTokenizer()
+# tokens = word_tokenize(result)
+
 result = set()
-f = codecs.open('C:/Users/s2876731/Desktop/in.txt', 'w', "utf-8")
+final_result = set()
+# f = codecs.open('C:/Users/s2876731/Desktop/in.txt', 'w', "utf-8")
 uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
 
-
-def search(myDict, lookup):
-    for key, value in myDict.items():
-        for v in value:
-            if lookup in v:
-                return key
 
 
 if __name__ == '__main__':
@@ -34,34 +37,41 @@ if __name__ == '__main__':
     database = db_connect[database_name]
     collection = database.collection_names(include_system_collections=False)
 
-stops = set(stopwords.words("english"))
-stemmer = PorterStemmer()
-tknzr = TweetTokenizer()
-# tokens = word_tokenize(result)
-
-for data in database['goldcoast_location'].find({}, {'text': 1, '_id': 0, 'lang': 1}).sort("_id", -1).limit(100):
+for data in database['goldcoast_location'].find({}, {'text': 1, '_id': 0, 'id_str': 1, 'lang': 1}).sort("_id", -1).limit(10):
     if data['lang'] == 'en':
         result = data["text"].replace("\n", " ")
         result = re.sub(r"https\S+", "", result)
-        #result = re.sub(r'\s+', '\s', result)
-        result = re.sub('[^A-Za-z0-9]+', ' ', result)
-        result = result.lower()
-        print("Original Text: %s" % result)
-        # resultsplit = result.split()
+        result = re.sub('[^A-Za-z0-9]+', ' ', result).lower()
+        # print(data)
+        # print("ID : %s \nOriginal Text: %s" % (data["id_str"], result))
+        output_tweet = (data["id_str"], result)
+        # print(output_tweet[0])
+        final_result.add(output_tweet)
 
-        tweettoken = simpleTokenize(result)
-        filteredtoken = [w for w in tweettoken if not w in stops]
-
-
+        tweet_token = simpleTokenize(result)
         # Use the universal tagger
-        taggedtoken = pos_tag(filteredtoken, tagset="universal")
-        print("Tag : %s" % taggedtoken)
+        tagged_token = pos_tag([w for w in tweet_token if w not in stops], tagset="universal")
+        # print("Tag : %s" % tagged_token)
         # Only get specific POS (such as N (Noun), A (Adverb), V (Verb))
-        specific_tag = [item[0] for item in taggedtoken if item[1] == 'ADJ' or item[1] == 'VERB']
-        stemtoken = [stemmer.stem(tag) for tag in specific_tag]
-        print("Specific tag only: %s" % stemtoken + "\n")
+        stem_token = [stemmer.stem(tag) for tag in
+                      [item[0] for item in tagged_token if item[1] == 'ADJ' or item[1] == 'VERB']]
+        # print("Specific tag only: %s" % stem_token + "\n")
 
-
-        threegrams = ngrams(taggedtoken, 3)
-        # for grams in threegrams:
+        three_grams = ngrams(tagged_token, 3)
+        # for grams in three_grams:
         # print(grams)
+
+tweets = {}
+in_tweet = {}
+for each_tweet in final_result:
+    tweets['text'] = each_tweet[1]
+    in_tweet[int(each_tweet[0])] = tweets
+
+print(in_tweet.keys())
+
+seeds = [991205551961853952, 991205975917936640]
+
+kmeans = kMeans(seeds, in_tweet)
+kmeans.converge()
+kmeans.printClusterText()
+kmeans.printClusters()
