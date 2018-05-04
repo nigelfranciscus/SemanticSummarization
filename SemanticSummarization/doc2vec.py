@@ -3,7 +3,6 @@ from __future__ import division, print_function, unicode_literals
 
 import json
 import random
-
 import pymongo
 import codecs
 import re
@@ -20,14 +19,19 @@ from nltk.corpus import brown
 from sklearn.cluster import KMeans
 
 from SemanticSummarization.twokenize import simpleTokenize
+
 from sumy.parsers.html import HtmlParser
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lsa import LsaSummarizer as LsaRank
+from sumy.summarizers.lsa import LsaSummarizer as LsaSummarizer
 from sumy.summarizers.text_rank import TextRankSummarizer as TextRank
 from sumy.summarizers.lex_rank import LexRankSummarizer as LexRank
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
+
+import gensim
+from gensim.models.doc2vec import TaggedDocument
+from collections import namedtuple
 
 stops = set(stopwords.words("english"))
 stemmer = PorterStemmer()
@@ -37,6 +41,7 @@ stemmer = PorterStemmer()
 # f = codecs.open('C:/Users/s2876731/Desktop/in.txt', 'w', "utf-8")
 uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
 
+
 if __name__ == '__main__':
     db_connect = pymongo.MongoClient(uri)
     database_name = 'twitter'
@@ -44,46 +49,35 @@ if __name__ == '__main__':
     collection = database.collection_names(include_system_collections=False)
 
 final_result = set()
-# TODO Fix Truncated tweeets: if truncated is true, text = extended_tweet/full_text
-for data in database['games_sample_100000'].find({}, {'text': 1, '_id': 0, 'id_str': 1, 'lang': 1}).limit(1000):
+for data in database['goldcoast_location'].find({}, {'text': 1, '_id': 0, 'id_str': 1, 'lang': 1}).limit(10):
     if data['lang'] == 'en':
         result = data["text"].replace("\n", " ")
-        result = result.replace("RT", "")
         result = re.sub(r"https\S+", "", result)
         result = re.sub('[^A-Za-z0-9]+', ' ', result).lower()
-        # print(result)
+        # print(data)
         # print("ID : %s \nOriginal Text: %s" % (data["id_str"], result))
         # output_tweet = (data["id_str"], result)
         # print(output_tweet[0])
         final_result.add(result)
 
         tweet_token = simpleTokenize(result)
-        # Use the universal tagger
-        tagged_token = pos_tag([w for w in tweet_token if w not in stops], tagset="universal")
-        # print("Tag : %s" % tagged_token)
-        # Only get specific POS (such as N (Noun), A (Adverb), V (Verb))
-        stem_token = [stemmer.stem(tag) for tag in
-                      [item[0] for item in tagged_token if item[1] == 'ADJ' or item[1] == 'VERB']]
-        # print("Specific tag only: %s" % stem_token + "\n")
 
-        three_grams = ngrams(tagged_token, 3)
-        # for grams in three_grams:
-        # print(grams)
-
-LANGUAGE = "english"
-SENTENCES_COUNT = 10
-
-# url = "http://www.zsstritezuct.estranky.cz/clanky/predmety/cteni/jak-naucit-dite-spravne-cist.html"
-# parser = HtmlParser.from_url(url, Tokenizer(LANGUAGE))
-# or for plain text files
-# TODO : Implement categories / paragraph vectoring beforehand.
 join_result = ".\n".join(final_result)
 # print(join_result)
-parser = PlaintextParser.from_string(join_result, Tokenizer(LANGUAGE))
-stemmer = Stemmer(LANGUAGE)
 
-summarizer = LexRank(stemmer)
-summarizer.stop_words = get_stop_words(LANGUAGE)
+SentimentDocument = namedtuple('SentimentDocument', 'words tags split sentiment')
 
-for sentence in summarizer(parser.document, SENTENCES_COUNT):
-    print(sentence)
+alldocs = []  # Will hold all docs in original order
+for line_no, line in enumerate(join_result):
+    tokens = gensim.utils.to_unicode(line).split()
+    words = tokens[1:]
+    tags = [line_no] # 'tags = [tokens[0]]' would also work at extra memory cost
+    split = ['train', 'test', 'extra', 'extra'][line_no//25000]  # 25k train, 25k test, 25k extra
+    sentiment = [1.0, 0.0, 1.0, 0.0, None, None, None, None][line_no//12500] # [12.5K pos, 12.5K neg]*2 then unknown
+    alldocs.append(SentimentDocument(words, tags, split, sentiment))
+
+train_docs = [doc for doc in alldocs if doc.split == 'train']
+test_docs = [doc for doc in alldocs if doc.split == 'test']
+doc_list = alldocs[:]  # For reshuffling per pass
+
+print('%d docs: %d train-sentiment, %d test-sentiment' % (len(doc_list), len(train_docs), len(test_docs)))
