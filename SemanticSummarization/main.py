@@ -44,14 +44,17 @@ if __name__ == '__main__':
     collection = database.collection_names(include_system_collections=False)
 
 final_result = set()
-# TODO Fix Truncated tweeets: if truncated is true, text = extended_tweet/full_text
-for data in database['games_sample_100000'].find({}, {'text': 1, '_id': 0, 'id_str': 1, 'lang': 1}).limit(1000):
+for data in database['games_sample_100000_aggregation'].\
+        find({}, {'_id': 0, 'text': 1, 'extended_tweet': 1, 'lang': 1, 'str_id': 1}).limit(1000):
     if data['lang'] == 'en':
+        if 'extended_tweet' in data:
+            data['text'] = data['extended_tweet']['full_text']
+
         result = data["text"].replace("\n", " ")
         result = result.replace("RT", "")
         result = re.sub(r"https\S+", "", result)
         result = re.sub('[^A-Za-z0-9]+', ' ', result).lower()
-        # print(result)
+
         # print("ID : %s \nOriginal Text: %s" % (data["id_str"], result))
         # output_tweet = (data["id_str"], result)
         # print(output_tweet[0])
