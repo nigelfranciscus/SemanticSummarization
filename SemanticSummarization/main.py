@@ -34,8 +34,14 @@ stemmer = PorterStemmer()
 # tknzr = TweetTokenizer()
 # tokens = word_tokenize(result)
 
-# f = codecs.open('C:/Users/s2876731/Desktop/in.txt', 'w', "utf-8")
+# f = codecs.open('tweets.txt', 'w', "utf-8")
 uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
+
+
+def mongo_connection(self, url, db_name):
+    self.url = pymongo.MongoClient(url)
+    self.db_name = db_connect[db_name]
+
 
 if __name__ == '__main__':
     db_connect = pymongo.MongoClient(uri)
@@ -82,6 +88,9 @@ SENTENCES_COUNT = 10
 # TODO : Implement categories / paragraph vectoring beforehand.
 join_result = ".\n".join(final_result)
 # print(join_result)
+f.write(join_result)
+f.close()
+
 parser = PlaintextParser.from_string(join_result, Tokenizer(LANGUAGE))
 stemmer = Stemmer(LANGUAGE)
 
