@@ -41,14 +41,14 @@ stemmer = PorterStemmer()
 def mongo_connection(url, db_name, collection_name):
     final_result = set()
 
-    url = pymongo.MongoClient(url)
-    db_name = url[db_name]
+    connection = pymongo.MongoClient(url)[db_name]
     # collection = database.collection_names(include_system_collections=False)
-    collection_name = collection_name
 
-    for data in db_name[collection_name]. \
-            find({}, {'_id': 0, 'text': 1, 'extended_tweet': 1, 'lang': 1, 'str_id': 1}).limit(1000):
-        if data['lang'] == 'en':
+    for data in connection[collection_name]. \
+            find({}, {'_id': 0, 'text': 1, 'extended_tweet': 1, 'lang': 1, 'str_id': 1}):
+        if "lang" not in data:
+            continue
+        if data["lang"] == "en":
             if 'extended_tweet' in data:
                 data['text'] = data['extended_tweet']['full_text']
 
@@ -60,7 +60,7 @@ def mongo_connection(url, db_name, collection_name):
             # print("ID : %s \nOriginal Text: %s" % (data["id_str"], result))
             # output_tweet = (data["id_str"], result)
             # print(output_tweet[0])
-            final_result.add(result)
+            final_result.add(result.strip())
 
     return final_result
 
@@ -97,10 +97,14 @@ def sumy_summarizer(text, lang, sentence_count, sum_type):
 
 
 if __name__ == '__main__':
-    tweet = mongo_connection('localhost', 'twitter', 'budget2018')
+    uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
+    tweet = mongo_connection(uri, 'twitter', 'goldcoast_location')
+    join_result = ". ".join(tweet)
+    f = codecs.open('Data/goldcoast.txt', 'w', "utf-8")
+    f.write(join_result)
 
-    print(sumy_summarizer(tweet, 'english', 10, TextRank))
-    print("\n")
-    print(sumy_summarizer(tweet, 'english', 10, LexRank))
-    print("\n")
-    print(sumy_summarizer(tweet, 'english', 10, LsaRank))
+    # print(sumy_summarizer(tweet, 'english', 10, TextRank))
+    # print("\n")
+    # print(sumy_summarizer(tweet, 'english', 10, LexRank))
+    # print("\n")
+    # print(sumy_summarizer(tweet, 'english', 10, LsaRank))

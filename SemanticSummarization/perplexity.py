@@ -39,7 +39,11 @@ def perplexity(testset, model):
 
 testset1 = "Monty Python"
 testset2 = "British surreal comedy group"
+testset3 = "influence"
+testset4 = "The Beatles"
 
 model = unigram(tokens)
 print(perplexity(testset1, model))
 print(perplexity(testset2, model))
+print(perplexity(testset3, model))
+print(perplexity(testset4, model))
