@@ -1,33 +1,21 @@
-from __future__ import absolute_import
-from __future__ import division, print_function, unicode_literals
-
-import json
-import random
 
 import pymongo
 import codecs
 import re
 
-from nltk.tag.stanford import CoreNLPPOSTagger
 from nltk.corpus import stopwords
-from nltk.tokenize import TweetTokenizer
-from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem.porter import PorterStemmer
 from nltk import ngrams
 from nltk import pos_tag
-from nltk.corpus import brown
 
-from sklearn.cluster import KMeans
-
-from SemanticSummarization.twokenize import simpleTokenize
-from sumy.parsers.html import HtmlParser
+from SemanticSummarization.Utils.twokenize import simpleTokenize
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
 from sumy.summarizers.lsa import LsaSummarizer as LsaRank
 from sumy.summarizers.text_rank import TextRankSummarizer as TextRank
 from sumy.summarizers.lex_rank import LexRankSummarizer as LexRank
-from sumy.nlp.stemmers import Stemmer
-from sumy.utils import get_stop_words
 
 stops = set(stopwords.words("english"))
 stemmer = PorterStemmer()
@@ -45,7 +33,7 @@ def mongo_connection(url, db_name, collection_name):
     # collection = database.collection_names(include_system_collections=False)
 
     for data in connection[collection_name]. \
-            find({}, {'_id': 0, 'text': 1, 'extended_tweet': 1, 'lang': 1, 'str_id': 1}):
+            find({}, {'_id': 0, 'text': 1, 'extended_tweet': 1, 'lang': 1, 'str_id': 1}).limit(1000):
         if "lang" not in data:
             continue
         if data["lang"] == "en":
@@ -96,15 +84,16 @@ def sumy_summarizer(text, lang, sentence_count, sum_type):
         print(sentence)
 
 
-if __name__ == '__main__':
-    uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
-    tweet = mongo_connection(uri, 'twitter', 'goldcoast_location')
-    join_result = ". ".join(tweet)
-    f = codecs.open('Data/goldcoast.txt', 'w', "utf-8")
-    f.write(join_result)
 
-    # print(sumy_summarizer(tweet, 'english', 10, TextRank))
-    # print("\n")
-    # print(sumy_summarizer(tweet, 'english', 10, LexRank))
-    # print("\n")
-    # print(sumy_summarizer(tweet, 'english', 10, LsaRank))
+uri = 'mongodb://bigdata:databig@localhost/?authSource=admin'
+tweet = mongo_connection(uri, 'twitter', 'goldcoast_location')
+# join_result = ". ".join(tweet)
+# print(join_result)
+# f = codecs.open('Data/goldcoast.txt', 'w', "utf-8")
+# f.write(join_result)
+
+sumy_summarizer(tweet, 'english', 10, TextRank)
+print("\n")
+sumy_summarizer(tweet, 'english', 10, LexRank)
+print("\n")
+sumy_summarizer(tweet, 'english', 10, LsaRank)
